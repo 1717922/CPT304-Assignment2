@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Holiday Information Site</title>
+    <script src="/js/global_country.js"></script>
+    <!-- layui -->
+    <link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>
+    <script src="https://www.layuicdn.com/layui/layui.js"></script>
+    <script src="https://lolicode.gitee.io/layui_component_tableselect/tableSelect.js"></script>
+    <!-- jquery -->
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+</head>
+<body style="background: url(/images/background.jpg) no-repeat center 0">
+<br/>
+<br/>
+<br/>
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="weather" lay-filter="weather">天气</a>
+    <a class="layui-btn layui-btn-xs" lay-event="hotel">住宿</a>
+</script>
+<div class="layui-container">
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2">
+            <form class="layui-form layui-form-pane" action="">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">选择年份</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="year" id="year" autocomplete="off" class="layui-input"
+                                   placeholder="yyyy">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">选择国家</label>
+                        <div class="layui-input-inline">
+                            <select name="country" id="country" lay-filter="country">
+                                <option value="" selected="">请选择国家</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-normal layui-border-black"
+                                onclick="searchHoliday()" type="button">
+                            查询节日
+                        </button>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">选择所在地</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="location_city" id="location_city" autocomplete="off"
+                                   class="layui-input" placeholder="请选择所在城市"/>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="layui-row">
+        <div class="layui-col-md8 layui-col-md-offset2">
+            <table class="layui-hide" id="data-table" lay-filter="data-table"></table>
+        </div>
+    </div>
+</div>
+<script>
+    let year;
+    let date;
+    let country;
+    let city;
+    let lat;
+    let lon;
+
+    let country_select = document.getElementById('country');
+    for (let i = 0; i < country_list.length; ++i) {
+        let option = document.createElement("option");
+        option.setAttribute("value", country_list[i][0]);
+        option.appendChild(document.createTextNode(country_list[i][1]));
+        country_select.appendChild(option);
+    }
+
+    let form = layui.form;
+    form.on('select(country)', function (data) {
+        country = data.value;
+        layui.use(['tableSelect'], function () {
+            let cityTableSelect = layui.tableSelect;
+            cityTableSelect.render({
+                elem: '#location_city',	//定义输入框input对象 必填
+                checkedKey: 'city', //表格的唯一建值，非常重要，影响到选中状态 必填
+                searchKey: 'namePrefix',	//搜索输入框的name值 默认keyword
+                searchPlaceholder: '关键词搜索',	//搜索输入框的提示文字 默认关键词搜索
+                table: {	//定义表格参数，与LAYUI的TABLE模块一致，只是无需再定义表格elem
+                    url: 'https://wft-geo-db.p.rapidapi.com/v1/geo/cities?countryIds=' + country
+                    , height: 'full-110'
+                    , headers: {
+                        "x-rapidapi-key": "71f1b62bd9msh684a17b3afb5819p15c6b1jsn8992469aed5d",
+                        "x-rapidapi-host": "wft-geo-db.p.rapidapi.com",
+                        "useQueryString": true
+                    }
+                    , cellMinWidth: 80
+                    , cols: [[
+                        {type: 'radio'}
+                        , {field: 'region', title: '省份', align: 'center'}
+                        , {field: 'city', title: '城市', align: 'center'}
+                    ]]
+                    , page: true
+                    , parseData: function (res) {
+                        return {
+                            "code": 0,
+                            "msg": '请求处理成功',
+                            "data": res.data,
+                            "count": res.metadata.totalCount
+                        };
+                    }
+                },
+                done: function (elem, data) {
+                    //选择完后的回调，包含2个返回值 elem:返回之前input对象；data:表格返回的选中的数据 []
+                    //拿到data[]后 就按照业务需求做想做的事情啦~比如加个隐藏域放ID...
+                    document.getElementById("location_city").value = data.data[0].city;
+                    city = data.data[0].city;
+                    lat = data.data[0].latitude;
+                    lon = data.data[0].longitude;
+                }
+            });
+        });
+    });
+
+    layui.use(['laydate'], function () {
+        let laydate = layui.laydate;
+        let layer = layui.layer;
+        laydate.render({
+            elem: '#year', //指定元素
+            type: 'year'
+        });
+
+    });
+
+
+    function searchHoliday() {
+        year = document.getElementById('year').value;
+        console.log('year=' + year);
+        if (year == null || year === '') {
+            layui.use('layer', function () {
+                let layer = layui.layer;
+                layer.msg('请选择年份');
+            });
+            return;
+        }
+        country = document.getElementById('country').value;
+        if (country == null || country === '') {
+            layui.use('layer', function () {
+                let layer = layui.layer;
+                layer.msg('请选择国家');
+            });
+            return;
+        }
+        console.log('country=' + country);
+        layui.use('table', function () {
+            let table = layui.table;
+            table.render({
+                elem: '#data-table'
+                , url: 'https://public-holiday.p.rapidapi.com/' + year + '/' + country
+                , height: 'full-300'
+                , headers: {
+                    "x-rapidapi-key": "71f1b62bd9msh684a17b3afb5819p15c6b1jsn8992469aed5d",
+                    "x-rapidapi-host": "public-holiday.p.rapidapi.com",
+                    "useQueryString": true
+                }
+                , cellMinWidth: 80
+                , cols: [[
+                    {field: 'date', title: '日期', sort: true, align: 'center'}
+                    , {field: 'localName', title: '节日名称', sort: true, align: 'center'}
+                    , {title: '操作', toolbar: '#bar', align: 'center'}
+                ]]
+                , page: false
+                , parseData: function (res) {
+                    return {
+                        "code": 0,
+                        "msg": '请求处理成功',
+                        "count": 1000,
+                        "data": res
+                    };
+                }
+            });
+            table.on('tool(data-table)', function (obj) {
+                console.log(obj);
+                if (city == null || city === "") {
+                    layui.use('layer', function () {
+                        let layer = layui.layer;
+                        layer.msg('请选择城市');
+                    });
+                    return;
+                }
+                if (obj.event === 'weather') {
+                    layui.use('layer', function () {
+                        let layer = layui.layer;
+                        let $ = layui.jquery;
+                        $.ajax({
+                            url: 'https://weatherbit-v1-mashape.p.rapidapi.com/forecast/daily?' +
+                                'units=metric&lang=en&lat=' + lat + '&lon=' + lon
+                            , type: 'get'
+                            , headers: {
+                                "x-rapidapi-key": "71f1b62bd9msh684a17b3afb5819p15c6b1jsn8992469aed5d",
+                                "x-rapidapi-host": "weatherbit-v1-mashape.p.rapidapi.com",
+                                "useQueryString": true
+                            }
+                            , success: function (data) {
+                                console.log('天气查询结果' + JSON.stringify(data));
+                                let data_list = data.data;
+                                let message = '';
+                                message += '实时天气:<br>'
+                                message += '最低温度:' + data_list[0].min_temp + '<br>';
+                                message += '最高温度:' + data_list[0].max_temp + '<br>';
+                                for (let i = 0; i < data_list.length; ++i) {
+                                    if (data_list[i].valid_date === obj.data.date) {
+                                        message += '节日当天天气(未来16天内节日):<br>'
+                                        message += '最低温度:' + data_list[i].min_temp + '<br>';
+                                        message += '最高温度:' + data_list[i].max_temp + '<br>';
+                                    }
+                                }
+                                layer.msg(message, {
+                                    icon: 6,//成功的表情
+                                    time: 8000
+                                });
+                            }
+                        });
+                    });
+                }
+                if (obj.event === 'hotel') {
+                    let url = 'https://www.airbnb.cn/s/' + city + '/homes?checkin=' + obj.data.date;
+                    window.open(url);
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>
