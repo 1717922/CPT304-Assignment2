@@ -16,8 +16,8 @@
 <br/>
 <br/>
 <script type="text/html" id="bar">
-    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="weather" lay-filter="weather">天气</a>
-    <a class="layui-btn layui-btn-xs" lay-event="hotel">住宿</a>
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="weather" lay-filter="weather">weather</a>
+    <a class="layui-btn layui-btn-xs" lay-event="hotel">accommodation</a>
 </script>
 <div class="layui-container">
     <div class="layui-row">
@@ -25,33 +25,33 @@
             <form class="layui-form layui-form-pane" action="">
                 <div class="layui-form-item">
                     <div class="layui-inline">
-                        <label class="layui-form-label">选择年份</label>
+                        <label class="layui-form-label">Year</label>
                         <div class="layui-input-block">
                             <input type="text" name="year" id="year" autocomplete="off" class="layui-input"
                                    placeholder="yyyy">
                         </div>
                     </div>
                     <div class="layui-inline">
-                        <label class="layui-form-label">选择国家</label>
+                        <label class="layui-form-label">Country</label>
                         <div class="layui-input-inline">
                             <select name="country" id="country" lay-filter="country">
-                                <option value="" selected="">请选择国家</option>
+                                <option value="" selected="">select a country</option>
                             </select>
                         </div>
                     </div>
                     <div class="layui-inline">
                         <button class="layui-btn layui-btn-normal layui-border-black"
                                 onclick="searchHoliday()" type="button">
-                            查询节日
+                            Search
                         </button>
                     </div>
                 </div>
                 <div class="layui-form-item">
                     <div class="layui-inline">
-                        <label class="layui-form-label">选择所在地</label>
+                        <label class="layui-form-label">City</label>
                         <div class="layui-input-inline">
                             <input type="text" name="location_city" id="location_city" autocomplete="off"
-                                   class="layui-input" placeholder="请选择所在城市"/>
+                                   class="layui-input" placeholder="select a city"/>
                         </div>
                     </div>
                 </div>
@@ -86,11 +86,11 @@
         layui.use(['tableSelect'], function () {
             let cityTableSelect = layui.tableSelect;
             cityTableSelect.render({
-                elem: '#location_city',	//定义输入框input对象 必填
-                checkedKey: 'city', //表格的唯一建值，非常重要，影响到选中状态 必填
-                searchKey: 'namePrefix',	//搜索输入框的name值 默认keyword
-                searchPlaceholder: '关键词搜索',	//搜索输入框的提示文字 默认关键词搜索
-                table: {	//定义表格参数，与LAYUI的TABLE模块一致，只是无需再定义表格elem
+                elem: '#location_city',
+                checkedKey: 'city',
+                searchKey: 'namePrefix',
+                searchPlaceholder: 'key words',
+                table: {
                     url: 'https://wft-geo-db.p.rapidapi.com/v1/geo/cities?countryIds=' + country
                     , height: 'full-110'
                     , headers: {
@@ -101,22 +101,20 @@
                     , cellMinWidth: 80
                     , cols: [[
                         {type: 'radio'}
-                        , {field: 'region', title: '省份', align: 'center'}
-                        , {field: 'city', title: '城市', align: 'center'}
+                        , {field: 'region', title: 'region', align: 'center'}
+                        , {field: 'city', title: 'city', align: 'center'}
                     ]]
                     , page: true
                     , parseData: function (res) {
                         return {
                             "code": 0,
-                            "msg": '请求处理成功',
+                            "msg": 'request success',
                             "data": res.data,
                             "count": res.metadata.totalCount
                         };
                     }
                 },
                 done: function (elem, data) {
-                    //选择完后的回调，包含2个返回值 elem:返回之前input对象；data:表格返回的选中的数据 []
-                    //拿到data[]后 就按照业务需求做想做的事情啦~比如加个隐藏域放ID...
                     document.getElementById("location_city").value = data.data[0].city;
                     city = data.data[0].city;
                     lat = data.data[0].latitude;
@@ -130,7 +128,7 @@
         let laydate = layui.laydate;
         let layer = layui.layer;
         laydate.render({
-            elem: '#year', //指定元素
+            elem: '#year',
             type: 'year'
         });
 
@@ -143,7 +141,7 @@
         if (year == null || year === '') {
             layui.use('layer', function () {
                 let layer = layui.layer;
-                layer.msg('请选择年份');
+                layer.msg('please select the year');
             });
             return;
         }
@@ -151,7 +149,7 @@
         if (country == null || country === '') {
             layui.use('layer', function () {
                 let layer = layui.layer;
-                layer.msg('请选择国家');
+                layer.msg('please select a country');
             });
             return;
         }
@@ -169,15 +167,15 @@
                 }
                 , cellMinWidth: 80
                 , cols: [[
-                    {field: 'date', title: '日期', sort: true, align: 'center'}
-                    , {field: 'localName', title: '节日名称', sort: true, align: 'center'}
-                    , {title: '操作', toolbar: '#bar', align: 'center'}
+                    {field: 'date', title: 'date', sort: true, align: 'center'}
+                    , {field: 'localName', title: 'holiday name', sort: true, align: 'center'}
+                    , {title: 'operations', toolbar: '#bar', align: 'center'}
                 ]]
                 , page: false
                 , parseData: function (res) {
                     return {
                         "code": 0,
-                        "msg": '请求处理成功',
+                        "msg": 'request success',
                         "count": 1000,
                         "data": res
                     };
@@ -188,7 +186,7 @@
                 if (city == null || city === "") {
                     layui.use('layer', function () {
                         let layer = layui.layer;
-                        layer.msg('请选择城市');
+                        layer.msg('please select a country');
                     });
                     return;
                 }
@@ -206,21 +204,20 @@
                                 "useQueryString": true
                             }
                             , success: function (data) {
-                                console.log('天气查询结果' + JSON.stringify(data));
                                 let data_list = data.data;
                                 let message = '';
-                                message += '实时天气:<br>'
-                                message += '最低温度:' + data_list[0].min_temp + '<br>';
-                                message += '最高温度:' + data_list[0].max_temp + '<br>';
+                                message += 'Current Weather:<br>'
+                                message += 'Lowest temperature:' + data_list[0].min_temp + '<br>';
+                                message += 'Maximum temperature:' + data_list[0].max_temp + '<br>';
                                 for (let i = 0; i < data_list.length; ++i) {
                                     if (data_list[i].valid_date === obj.data.date) {
-                                        message += '节日当天天气(未来16天内节日):<br>'
-                                        message += '最低温度:' + data_list[i].min_temp + '<br>';
-                                        message += '最高温度:' + data_list[i].max_temp + '<br>';
+                                        message += 'Holiday weather:<br>'
+                                        message += 'Lowest temperature:' + data_list[i].min_temp + '<br>';
+                                        message += 'Maximum temperature:' + data_list[i].max_temp + '<br>';
                                     }
                                 }
                                 layer.msg(message, {
-                                    icon: 6,//成功的表情
+                                    icon: 6,
                                     time: 8000
                                 });
                             }
